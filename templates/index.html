@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Linear Search Performance Analyzer</title>
+  <meta name="description" content="Visualize and analyze Linear Search algorithm performance — Best, Average, and Worst Case analysis for college DAA micro-project." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #0b0f1a;
+      --surface:    #111827;
+      --surface2:   #1a2236;
+      --border:     #1f2f4a;
+      --text:       #e2e8f0;
+      --muted:      #6b7fa3;
+      --accent:     #6366f1;
+
+      --best-color:  #22c55e;
+      --avg-color:   #f59e0b;
+      --worst-color: #ef4444;
+
+      --best-glow:   0 0 20px rgba(34,197,94,0.35);
+      --avg-glow:    0 0 20px rgba(245,158,11,0.35);
+      --worst-glow:  0 0 20px rgba(239,68,68,0.35);
+
+      --radius: 14px;
+      --transition: 0.22s ease;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+      padding-bottom: 60px;
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      background: linear-gradient(135deg, #0b0f1a 0%, #111827 40%, #0f1c35 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 44px 20px 36px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    header::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(99,102,241,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    header h1 {
+      font-size: clamp(1.6rem, 4vw, 2.6rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, #a5b4fc 0%, #818cf8 40%, #c084fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+    header p {
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 400;
+      letter-spacing: 0.3px;
+    }
+    .badge {
+      display: inline-block;
+      margin-top: 14px;
+      background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.35);
+      color: #a5b4fc;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 999px;
+    }
+
+    /* ===== LAYOUT ===== */
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    section { margin-top: 32px; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 30px;
+    }
+
+    .section-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 18px;
+    }
+
+    /* ===== INPUTS ===== */
+    .input-group { margin-bottom: 18px; }
+    .input-group label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 7px;
+      letter-spacing: 0.3px;
+    }
+    .input-group input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 11px 14px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .input-group input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.18);
+    }
+    .input-group input::placeholder { color: #3a4a65; }
+
+    /* ===== BUTTONS ===== */
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      border: none; border-radius: 9px; cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600; font-size: 0.87rem;
+      padding: 10px 20px;
+      transition: transform 0.14s ease, box-shadow 0.14s ease, filter 0.14s ease;
+      outline: none;
+      position: relative; overflow: hidden;
+    }
+    .btn:hover  { transform: translateY(-2px); filter: brightness(1.1); }
+    .btn:active { transform: translateY(0px);  filter: brightness(0.95); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1, #818cf8);
+      color: #fff;
+      box-shadow: 0 4px 18px rgba(99,102,241,0.38);
+    }
+    .btn-best {
+      background: rgba(34,197,94,0.12);
+      border: 1px solid rgba(34,197,94,0.4);
+      color: var(--best-color);
+    }
+    .btn-avg {
+      background: rgba(245,158,11,0.12);
+      border: 1px solid rgba(245,158,11,0.4);
+      color: var(--avg-color);
+    }
+    .btn-worst {
+      background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.4);
+      color: var(--worst-color);
+    }
+
+    /* ===== ERROR BANNER ===== */
+    #error-banner {
+      display: none;
+      background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.35);
+      border-radius: 9px;
+      color: #fca5a5;
+      padding: 12px 16px;
+      font-size: 0.87rem;
+      margin-top: 14px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    /* ===== VISUALIZATION ===== */
+    #viz-section { display: none; }
+    .viz-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+    #viz-boxes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 64px;
+    }
+
+    .arr-box {
+      width: 52px; height: 52px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 9px;
+      background: var(--surface2);
+      border: 2px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text);
+      flex-direction: column;
+      position: relative;
+      transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+    }
+    .arr-box .idx {
+      font-size: 0.55rem;
+      font-weight: 400;
+      color: var(--muted);
+      position: absolute;
+      bottom: 4px;
+    }
+
+    .arr-box.scanning {
+      background: rgba(99,102,241,0.2);
+      border-color: #6366f1;
+      box-shadow: 0 0 14px rgba(99,102,241,0.4);
+      color: #a5b4fc;
+      animation: pulse-box 0.4s ease;
+    }
+    .arr-box.checked {
+      background: rgba(107,127,163,0.1);
+      border-color: #2a3a55;
+      color: #3a4a65;
+    }
+    .arr-box.found-best {
+      background: rgba(34,197,94,0.2);
+      border-color: var(--best-color);
+      box-shadow: var(--best-glow);
+      color: var(--best-color);
+    }
+    .arr-box.found-avg {
+      background: rgba(245,158,11,0.2);
+      border-color: var(--avg-color);
+      box-shadow: var(--avg-glow);
+      color: var(--avg-color);
+    }
+    .arr-box.found-worst {
+      background: rgba(239,68,68,0.2);
+      border-color: var(--worst-color);
+      box-shadow: var(--worst-glow);
+      color: var(--worst-color);
+    }
+    .arr-box.not-found {
+      background: rgba(239,68,68,0.08);
+      border-color: rgba(239,68,68,0.3);
+      color: #5a2a2a;
+    }
+
+    @keyframes pulse-box {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.12); }
+      100% { transform: scale(1); }
+    }
+
+    /* ===== RESULTS PANEL ===== */
+    #results-section { display: none; }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 16px 18px;
+      text-align: center;
+    }
+    .stat-card .stat-label {
+      font-size: 0.7rem;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .stat-card .stat-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text);
+    }
+    .stat-card .stat-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    /* Case banner */
+    .case-banner {
+      display: flex; align-items: center; gap: 14px;
+      border-radius: 11px;
+      padding: 18px 22px;
+      margin-bottom: 18px;
+      border: 1px solid;
+    }
+    .case-banner.best  { background: rgba(34,197,94,0.08);  border-color: rgba(34,197,94,0.35);  }
+    .case-banner.avg   { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.35); }
+    .case-banner.worst { background: rgba(239,68,68,0.08);  border-color: rgba(239,68,68,0.35);  }
+
+    .case-icon { font-size: 1.8rem; line-height: 1; }
+    .case-info { flex: 1; }
+    .case-label {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+    .case-banner.best  .case-label { color: var(--best-color); }
+    .case-banner.avg   .case-label { color: var(--avg-color); }
+    .case-banner.worst .case-label { color: var(--worst-color); }
+
+    .case-complexity {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+      font-weight: 600;
+      opacity: 0.75;
+    }
+    .case-explanation {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* ===== CHART ===== */
+    #chart-section { display: none; }
+    #chartContainer { position: relative; height: 280px; }
+    #fallbackChart { display: none; }
+    .fallback-bar-row {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+    }
+    .fallback-bar-label { width: 80px; font-size: 0.8rem; font-weight: 600; text-align: right; }
+    .fallback-bar-track {
+      flex: 1; height: 32px; background: var(--surface2);
+      border-radius: 6px; overflow: hidden; position: relative;
+    }
+    .fallback-bar-fill {
+      height: 100%; border-radius: 6px;
+      transition: width 0.8s ease;
+      display: flex; align-items: center; padding-left: 10px;
+      font-size: 0.78rem; font-weight: 700; color: #fff;
+    }
+    .fallback-bar-live {
+      margin-left: 8px; font-size: 0.75rem; color: var(--muted); white-space: nowrap;
+    }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeIn    { from { opacity: 0; }               to { opacity: 1; } }
+    @keyframes slideUp   { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+
+    .animate-in { animation: slideUp 0.4s ease forwards; }
+
+    /* ===== COMPARISONS METER ===== */
+    #cmp-meter { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border); }
+    .cmp-meter-header {
+      display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px;
+    }
+    .cmp-meter-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 1.2px;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .cmp-meter-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.4rem; font-weight: 800; color: var(--text);
+      transition: color 0.3s;
+    }
+    .cmp-meter-sub {
+      font-size: 0.72rem; color: var(--muted); margin-left: auto;
+    }
+    .cmp-dots {
+      display: flex; flex-wrap: wrap; gap: 6px;
+    }
+    .cmp-dot {
+      width: 20px; height: 20px; border-radius: 4px;
+      background: var(--surface2); border: 1.5px solid var(--border);
+      transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+      flex-shrink: 0;
+    }
+    .cmp-dot.active {
+      border-color: currentColor;
+      box-shadow: 0 0 6px currentColor;
+    }
+
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: #1f2f4a; border-radius: 3px; }
+
+    /* ===== LOADING SPINNER ===== */
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header>
+  <div class="container">
+    <h1>⚡ Linear Search Performance Analyzer</h1>
+    <p>Best Case · Average Case · Worst Case — visualized and explained</p>
+    <span class="badge">DAA Micro-Project</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ===== INPUT SECTION ===== -->
+  <section>
+    <div class="card">
+      <div class="section-title">🔢 Input</div>
+
+      <div class="input-group">
+        <label for="array-input">Array Elements <span style="color:var(--muted);font-weight:400">(comma-separated numbers)</span></label>
+        <input type="text" id="array-input" placeholder="e.g. 10, 20, 30, 40, 50" autocomplete="off" />
+      </div>
+
+      <div class="input-group">
+        <label for="target-input">Search Target</label>
+        <input type="text" id="target-input" placeholder="e.g. 30" autocomplete="off" />
+      </div>
+
+      <div id="error-banner">⚠️ <span id="error-text"></span></div>
+
+      <div class="btn-row" style="margin-top:20px">
+        <button class="btn btn-primary" id="run-btn" onclick="runSearch()">
+          <span id="run-label">▶ Run Search</span>
+        </button>
+      </div>
+
+      <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:18px;">
+        <div class="section-title" style="margin-bottom:12px">⚡ Auto-Generate Test Cases</div>
+        <div class="btn-row">
+          <button class="btn btn-best"  onclick="autoGenerate('best')" >🟢 Best Case</button>
+          <button class="btn btn-avg"   onclick="autoGenerate('avg')"  >🟡 Average Case</button>
+          <button class="btn btn-worst" onclick="autoGenerate('worst')">🔴 Worst Case</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== VISUALIZATION ===== -->
+  <section id="viz-section">
+    <div class="card">
+      <div class="section-title">🎯 Search Visualization</div>
+      <p class="viz-label" id="viz-status">Preparing visualization…</p>
+      <div id="viz-boxes"></div>
+    </div>
+  </section>
+
+  <!-- ===== RESULTS ===== -->
+  <section id="results-section">
+    <div class="card animate-in" id="results-card">
+      <div class="section-title">📊 Results</div>
+
+      <!-- Case banner -->
+      <div class="case-banner" id="case-banner">
+        <div class="case-icon" id="case-icon"></div>
+        <div class="case-info">
+          <div class="case-label" id="case-label"></div>
+          <div class="case-complexity" id="case-complexity"></div>
+          <div class="case-explanation" id="case-explanation"></div>
+        </div>
+      </div>
+
+      <!-- Stats grid -->
+      <div class="results-grid">
+        <div class="stat-card">
+          <div class="stat-label">Found?</div>
+          <div class="stat-value" id="stat-found"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Index</div>
+          <div class="stat-value" id="stat-index"></div>
+          <div class="stat-sub">0-based position</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Comparisons</div>
+          <div class="stat-value" id="stat-comparisons">0</div>
+          <div class="stat-sub">actual loop count</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Time (ms)</div>
+          <div class="stat-value" id="stat-time">0</div>
+          <div class="stat-sub">perf_counter</div>
+        </div>
+      </div>
+
+      <!-- ===== COMPARISONS METER ===== -->
+      <div id="cmp-meter">
+        <div class="cmp-meter-header">
+          <span class="cmp-meter-title">Comparisons</span>
+          <span class="cmp-meter-count" id="cmp-count">0</span>
+          <span class="cmp-meter-sub">actual loop iterations</span>
+        </div>
+        <div class="cmp-dots" id="cmp-dots"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== CHART ===== -->
+  <section id="chart-section">
+    <div class="card">
+      <div class="section-title">📈 Comparison Chart — Theoretical vs Live</div>
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:16px">
+        Reference bars show theoretical comparisons for an array of length <strong id="chart-n-label">n</strong>.
+        The highlighted bar shows your actual live result.
+      </p>
+      <div id="chartContainer">
+        <canvas id="myChart"></canvas>
+      </div>
+      <!-- CSS fallback (shown if Chart.js fails to load) -->
+      <div id="fallbackChart">
+        <div class="fallback-bar-row">
+          <span class="fallback-bar-label" style="color:var(--best-color)">Best</span>
+          <div class="fallback-bar-track">
+            <div class="fallback-bar-fill" id="fb-best" style="background:var(--best-color)">1</div>
+          </div>
+          <span class="fallback-bar-live" id="fb-best-live"></span>
+        </div>
+        <div class="fallback-bar-row">
+          <span class="fallback-bar-label" style="color:var(--avg-color)">Average</span>
+          <div class="fallback-bar-track">
+            <div class="fallback-bar-fill" id="fb-avg" style="background:var(--avg-color)"></div>
+          </div>
+          <span class="fallback-bar-live" id="fb-avg-live"></span>
+        </div>
+        <div class="fallback-bar-row">
+          <span class="fallback-bar-label" style="color:var(--worst-color)">Worst</span>
+          <div class="fallback-bar-track">
+            <div class="fallback-bar-fill" id="fb-worst" style="background:var(--worst-color)"></div>
+          </div>
+          <span class="fallback-bar-live" id="fb-worst-live"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /container -->
+
+<script>
+// ==================================================
+// CONFIGURATION
+// ==================================================
+let chartInstance = null;
+
+const CASE_META = {
+  "Best Case":    { cls: "best",  icon: "🟢", color: "#22c55e" },
+  "Average Case": { cls: "avg",   icon: "🟡", color: "#f59e0b" },
+  "Worst Case":   { cls: "worst", icon: "🔴", color: "#ef4444" }
+};
+
+// ==================================================
+// AUTO-GENERATE PRESET INPUTS
+// ==================================================
+function autoGenerate(type) {
+  const arrayInput  = document.getElementById("array-input");
+  const targetInput = document.getElementById("target-input");
+  hideError();
+
+  if (type === "best") {
+    arrayInput.value  = "10, 20, 30, 40, 50";
+    targetInput.value = "10";
+  } else if (type === "avg") {
+    arrayInput.value  = "10, 20, 30, 40, 50";
+    targetInput.value = "30";
+  } else if (type === "worst") {
+    arrayInput.value  = "10, 20, 30, 40, 50";
+    targetInput.value = "100";
+  }
+
+  // Flash the input to show it changed
+  [arrayInput, targetInput].forEach(el => {
+    el.style.transition = "box-shadow 0.2s";
+    el.style.boxShadow  = "0 0 0 3px rgba(99,102,241,0.4)";
+    setTimeout(() => { el.style.boxShadow = ""; }, 600);
+  });
+}
+
+// ==================================================
+// INPUT PARSING & VALIDATION (frontend)
+// ==================================================
+function parseInputs() {
+  const rawArray  = document.getElementById("array-input").value.trim();
+  const rawTarget = document.getElementById("target-input").value.trim();
+
+  if (!rawArray) return { error: "Array is empty. Please enter at least one number." };
+  if (!rawTarget) return { error: "Target is empty. Please enter a search value." };
+
+  const parts = rawArray.split(",").map(s => s.trim()).filter(s => s !== "");
+  if (parts.length === 0) return { error: "Array has no valid numbers." };
+
+  const arr = [];
+  for (const p of parts) {
+    const n = Number(p);
+    if (isNaN(n)) return { error: `"${p}" is not a valid number.` };
+    arr.push(n);
+  }
+
+  const target = Number(rawTarget);
+  if (isNaN(target)) return { error: `"${rawTarget}" is not a valid number.` };
+
+  return { arr, target };
+}
+
+// ==================================================
+// VISUALIZATION: animate the search step-by-step
+// ==================================================
+function buildVizBoxes(arr) {
+  const container = document.getElementById("viz-boxes");
+  container.innerHTML = "";
+  arr.forEach((val, i) => {
+    const box = document.createElement("div");
+    box.classList.add("arr-box");
+    box.id = `box-${i}`;
+    box.innerHTML = `${val}<span class="idx">[${i}]</span>`;
+    container.appendChild(box);
+  });
+}
+
+async function animateSearch(arr, foundIndex, caseClass) {
+  document.getElementById("viz-section").style.display = "block";
+  buildVizBoxes(arr);
+  document.getElementById("viz-status").textContent = "Scanning array…";
+
+  const delay = ms => new Promise(res => setTimeout(res, ms));
+
+  // Use shorter delay for large arrays so it doesn't take too long
+  const stepDelay = Math.max(80, Math.min(220, Math.floor(1200 / arr.length)));
+
+  for (let i = 0; i < arr.length; i++) {
+    const box = document.getElementById(`box-${i}`);
+
+    // Highlight current box being scanned
+    box.classList.add("scanning");
+    document.getElementById("viz-status").textContent =
+      `Comparing index [${i}] → value ${arr[i]}…`;
+    await delay(stepDelay);
+
+    if (i === foundIndex) {
+      // Found — apply case color
+      box.classList.remove("scanning");
+      box.classList.add(`found-${caseClass}`);
+      document.getElementById("viz-status").textContent =
+        `✅ Found at index [${i}]!`;
+      break;
+    } else {
+      // Not a match — fade it out
+      box.classList.remove("scanning");
+      box.classList.add("checked");
+    }
+  }
+
+  // Not found case
+  if (foundIndex === -1) {
+    arr.forEach((_, i) => {
+      document.getElementById(`box-${i}`).classList.add("not-found");
+    });
+    document.getElementById("viz-status").textContent =
+      "❌ Element not found — all elements checked.";
+  }
+}
+
+// ==================================================
+// CHART RENDERING
+// ==================================================
+function renderChart(data) {
+  const { best, average, worst } = data.chart;
+  const liveComparisons = data.comparisons;
+  const caseMeta = CASE_META[data.case];
+  const chartSection = document.getElementById("chart-section");
+  document.getElementById("chart-n-label").textContent = data.array_length;
+
+  chartSection.style.display = "block";
+
+  // Try Chart.js
+  if (typeof Chart !== "undefined") {
+    document.getElementById("chartContainer").style.display = "block";
+    document.getElementById("fallbackChart").style.display  = "none";
+
+    const labels   = ["Best Case\nO(1)", "Average Case\nO(n/2)~O(n)", "Worst Case\nO(n)"];
+    const barColors = ["#22c55e", "#f59e0b", "#ef4444"];
+
+    // Highlight the live result bar with a brighter version
+    const liveBarColors = barColors.map((c, i) => {
+      const isLive =
+        (i === 0 && data.case === "Best Case")    ||
+        (i === 1 && data.case === "Average Case") ||
+        (i === 2 && data.case === "Worst Case");
+      return isLive ? c : c + "55"; // dim non-live bars
+    });
+
+    const refData  = [best, average, worst];
+    const liveData = [
+      data.case === "Best Case"    ? liveComparisons : null,
+      data.case === "Average Case" ? liveComparisons : null,
+      data.case === "Worst Case"   ? liveComparisons : null
+    ];
+
+    if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+
+    const ctx = document.getElementById("myChart").getContext("2d");
+    chartInstance = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [
+          {
+            label: "Theoretical (reference)",
+            data: refData,
+            backgroundColor: liveBarColors,
+            borderColor: barColors,
+            borderWidth: 2,
+            borderRadius: 8,
+          },
+          {
+            label: "Live Result",
+            data: liveData,
+            backgroundColor: caseMeta.color + "cc",
+            borderColor: caseMeta.color,
+            borderWidth: 3,
+            borderRadius: 8,
+            type: "bar",
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: { color: "#6b7fa3", font: { size: 12, family: "Inter" } }
+          },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} comparisons`
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: "#6b7fa3", font: { size: 11 } },
+            grid:  { color: "#1f2f4a" }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              color: "#6b7fa3",
+              stepSize: 1,
+              callback: v => (Number.isInteger(v) ? v : "")
+            },
+            grid: { color: "#1f2f4a" }
+          }
+        }
+      }
+    });
+
+  } else {
+    // CSS fallback
+    document.getElementById("chartContainer").style.display = "none";
+    document.getElementById("fallbackChart").style.display  = "block";
+
+    const maxVal = worst;
+    const pct = v => Math.max(4, Math.round((v / maxVal) * 100)) + "%";
+
+    document.getElementById("fb-best").style.width  = pct(best);
+    document.getElementById("fb-avg").style.width   = pct(average);
+    document.getElementById("fb-worst").style.width = pct(worst);
+    document.getElementById("fb-best").textContent  = best;
+    document.getElementById("fb-avg").textContent   = average;
+    document.getElementById("fb-worst").textContent = worst;
+
+    const liveTag = `← Live: ${liveComparisons}`;
+    document.getElementById("fb-best-live").textContent  = data.case === "Best Case"    ? liveTag : "";
+    document.getElementById("fb-avg-live").textContent   = data.case === "Average Case" ? liveTag : "";
+    document.getElementById("fb-worst-live").textContent = data.case === "Worst Case"   ? liveTag : "";
+  }
+}
+
+// ==================================================
+// ANIMATED COUNTER
+// ==================================================
+function animateCounter(el, target, duration, decimals) {
+  const start = performance.now();
+  const update = now => {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+    const current = eased * target;
+    el.textContent = decimals ? current.toFixed(5) : Math.round(current);
+    if (progress < 1) requestAnimationFrame(update);
+  };
+  requestAnimationFrame(update);
+}
+
+// ==================================================
+// COMPARISONS METER
+// One dot per array element; filled dots = comparisons made
+// ==================================================
+function renderComparisonMeter(comparisons, arrayLength, accentColor) {
+  const dotsContainer = document.getElementById("cmp-dots");
+  const countEl       = document.getElementById("cmp-count");
+
+  // Reset
+  dotsContainer.innerHTML = "";
+  countEl.textContent = "0";
+  countEl.style.color = "var(--text)";
+
+  // Build one dot per array element
+  for (let i = 0; i < arrayLength; i++) {
+    const dot = document.createElement("div");
+    dot.className = "cmp-dot";
+    dot.id = `cmp-dot-${i}`;
+    dotsContainer.appendChild(dot);
+  }
+
+  // Animate: light up one dot at a time, update counter
+  const stepMs = Math.max(60, Math.min(200, Math.floor(800 / comparisons)));
+  let step = 0;
+  const timer = setInterval(() => {
+    if (step >= comparisons) {
+      clearInterval(timer);
+      // Final colour on the count number to match case
+      countEl.style.color = accentColor;
+      return;
+    }
+    const dot = document.getElementById(`cmp-dot-${step}`);
+    if (dot) {
+      dot.style.background    = accentColor;
+      dot.style.borderColor   = accentColor;
+      dot.style.boxShadow     = `0 0 7px ${accentColor}`;
+      dot.classList.add("active");
+    }
+    step++;
+    countEl.textContent = step;  // live count update
+  }, stepMs);
+}
+
+// ==================================================
+// SHOW / HIDE ERROR
+// ==================================================
+function showError(msg) {
+  document.getElementById("error-text").textContent = msg;
+  document.getElementById("error-banner").style.display = "block";
+}
+function hideError() {
+  document.getElementById("error-banner").style.display = "none";
+}
+
+// ==================================================
+// RENDER RESULTS PANEL
+// ==================================================
+function renderResults(data) {
+  const caseMeta = CASE_META[data.case];
+
+  // Case banner
+  const banner = document.getElementById("case-banner");
+  banner.className = `case-banner ${caseMeta.cls}`;
+  document.getElementById("case-icon").textContent       = caseMeta.icon;
+  document.getElementById("case-label").textContent      = data.case;
+  document.getElementById("case-complexity").textContent = data.complexity;
+  document.getElementById("case-explanation").textContent = data.explanation;
+
+  // Stats
+  const foundEl = document.getElementById("stat-found");
+  if (data.found) {
+    foundEl.textContent = "✅ Yes";
+    foundEl.style.color = "#22c55e";
+    foundEl.style.fontSize = "1.1rem";
+  } else {
+    foundEl.textContent = "❌ No";
+    foundEl.style.color = "#ef4444";
+    foundEl.style.fontSize = "1.1rem";
+  }
+
+  document.getElementById("stat-index").textContent = data.index;
+
+  // Animate comparisons counter
+  const compEl = document.getElementById("stat-comparisons");
+  compEl.textContent = "0";
+  animateCounter(compEl, data.comparisons, 600, false);
+
+  // Animate time counter
+  const timeEl = document.getElementById("stat-time");
+  timeEl.textContent = "0";
+  animateCounter(timeEl, data.time_ms, 600, true);
+
+  // Show section
+  const sec = document.getElementById("results-section");
+  sec.style.display = "block";
+  const card = document.getElementById("results-card");
+  card.style.animation = "none";
+  card.offsetHeight; // reflow
+  card.style.animation = "slideUp 0.4s ease forwards";
+
+  // ── Comparisons Meter ──
+  renderComparisonMeter(data.comparisons, data.array_length, caseMeta.color);
+}
+
+// ==================================================
+// MAIN RUN FUNCTION
+// ==================================================
+async function runSearch() {
+  hideError();
+
+  // Parse inputs
+  const parsed = parseInputs();
+  if (parsed.error) { showError(parsed.error); return; }
+
+  const { arr, target } = parsed;
+
+  // Show loading state on button
+  const runBtn   = document.getElementById("run-btn");
+  const runLabel = document.getElementById("run-label");
+  runLabel.innerHTML = `<span class="spinner"></span> Searching…`;
+  runBtn.disabled = true;
+
+  try {
+    // POST to Flask backend
+    const response = await fetch("/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ array: arr, target })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      showError(data.error || "An error occurred. Please try again.");
+      return;
+    }
+
+    // Determine caseClass for visualization
+    const caseClass = CASE_META[data.case].cls;
+
+    // Run visualization first (non-blocking)
+    animateSearch(arr, data.index, caseClass);
+
+    // Wait a moment so visualization has started before showing results
+    await new Promise(res => setTimeout(res, 300));
+
+    // Render results panel
+    renderResults(data);
+
+    // Render chart
+    renderChart(data);
+
+    // Scroll to results smoothly
+    setTimeout(() => {
+      document.getElementById("results-section").scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 500);
+
+  } catch (err) {
+    showError("Network error: Could not reach the server. Make sure Flask is running.");
+  } finally {
+    runLabel.innerHTML = "▶ Run Search";
+    runBtn.disabled = false;
+  }
+}
+
+// Allow pressing Enter in inputs to trigger search
+document.getElementById("array-input").addEventListener("keydown",  e => { if (e.key === "Enter") runSearch(); });
+document.getElementById("target-input").addEventListener("keydown", e => { if (e.key === "Enter") runSearch(); });
+</script>
+</body>
+</html>
